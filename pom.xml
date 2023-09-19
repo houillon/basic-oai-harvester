@@ -22,24 +22,42 @@
     <nullaway.version>0.10.14</nullaway.version>
     <jspecify.version>0.3.0</jspecify.version>
     <flogger.version>0.7.4</flogger.version>
+    <lombok.version>edge-SNAPSHOT</lombok.version>
+
+    <jaxb-maven-plugin.version>2.0.9</jaxb-maven-plugin.version>
+    <glassfish-jaxb.version>2.3.8</glassfish-jaxb.version>
+    <jakarta-xml-bind.version>2.3.3</jakarta-xml-bind.version>
   </properties>
+
+  <repositories>
+    <repository>
+      <id>projectlombok.org</id>
+      <url>https://projectlombok.org/edge-releases</url>
+    </repository>
+  </repositories>
 
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter</artifactId>
+      <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
 
     <dependency>
-      <groupId>com.google.flogger</groupId>
-      <artifactId>flogger</artifactId>
-      <version>${flogger.version}</version>
+      <groupId>org.glassfish.jaxb</groupId>
+      <artifactId>jaxb-runtime</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.google.flogger</groupId>
-      <artifactId>flogger-system-backend</artifactId>
-      <version>${flogger.version}</version>
+      <groupId>org.jvnet.jaxb</groupId>
+      <artifactId>jaxb2-basics-runtime</artifactId>
+      <version>${jaxb-maven-plugin.version}</version>
     </dependency>
+
+    <dependency>
+      <groupId>dev.failsafe</groupId>
+      <artifactId>failsafe</artifactId>
+      <version>3.3.2</version>
+    </dependency>
+
     <dependency>
       <groupId>org.jspecify</groupId>
       <artifactId>jspecify</artifactId>
@@ -91,6 +109,31 @@
               <version>${spring-boot.version}</version>
             </path>
           </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jvnet.jaxb</groupId>
+        <artifactId>jaxb-maven-plugin</artifactId>
+        <version>${jaxb-maven-plugin.version}</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <extension>true</extension>
+          <args>
+            <arg>-XtoString</arg>
+          </args>
+          <plugins>
+            <plugin>
+              <groupId>org.jvnet.jaxb</groupId>
+              <artifactId>jaxb2-basics</artifactId>
+              <version>${jaxb-maven-plugin.version}</version>
+            </plugin>
+          </plugins>
         </configuration>
       </plugin>
       <plugin>

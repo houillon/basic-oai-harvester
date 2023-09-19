@@ -1,4 +1,4 @@
-package fr.persee.oai.response;
+package fr.persee.oai.domain.response;
 
 import org.jspecify.annotations.Nullable;
 

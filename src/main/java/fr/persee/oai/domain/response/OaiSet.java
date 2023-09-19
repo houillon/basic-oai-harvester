@@ -1,4 +1,4 @@
-package fr.persee.oai.response;
+package fr.persee.oai.domain.response;
 
 import java.util.List;
 import org.w3c.dom.Element;

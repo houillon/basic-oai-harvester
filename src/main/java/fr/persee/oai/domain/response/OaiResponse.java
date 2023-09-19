@@ -1,6 +1,6 @@
-package fr.persee.oai.response;
+package fr.persee.oai.domain.response;
 
-import fr.persee.oai.request.OaiRequest;
+import fr.persee.oai.domain.request.OaiRequest;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;

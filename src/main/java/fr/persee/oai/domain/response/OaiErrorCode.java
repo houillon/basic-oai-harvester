@@ -1,4 +1,4 @@
-package fr.persee.oai.response;
+package fr.persee.oai.domain.response;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
