@@ -11,11 +11,11 @@ import java.util.Optional;
 import org.springframework.web.util.DefaultUriBuilderFactory;
 import org.springframework.web.util.UriBuilderFactory;
 
-public class OaiHttpRequestGenerator {
+public class RequestGenerator {
 
   private static final UriBuilderFactory UBF = new DefaultUriBuilderFactory();
 
-  public static class Verb {
+  private static class Verb {
     public static final String IDENTIFY = "Identify";
     public static final String LIST_METADATA_FORMATS = "ListMetadataFormats";
     public static final String LIST_SETS = "ListSets";

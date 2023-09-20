@@ -6,6 +6,7 @@ import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import fr.persee.oai.domain.request.OaiRequest;
 import fr.persee.oai.domain.response.OaiGranularity;
+import fr.persee.oai.domain.response.OaiResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -16,14 +17,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.openarchives.oai._2.OAIPMHtype;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RequestService {
 
   private final HttpClient httpClient =
@@ -77,10 +79,12 @@ public class RequestService {
     return null;
   }
 
-  private final OaiHttpResponseParser parser;
+  private final ResponseHandler responseHandler;
 
-  public OAIPMHtype execute(OaiRequest request, OaiGranularity granularity) {
-    URI uri = OaiHttpRequestGenerator.uri(request, granularity);
+  public OaiResponse execute(OaiRequest request, OaiGranularity granularity) {
+    log.atDebug().log("executing request: {}", request);
+
+    URI uri = RequestGenerator.uri(request, granularity);
 
     HttpRequest httpRequest =
         HttpRequest.newBuilder(uri).GET().timeout(Duration.ofMinutes(1)).build();
@@ -91,7 +95,7 @@ public class RequestService {
               .get(() -> httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofInputStream()));
 
       try (InputStream is = response.body()) {
-        return parser.parse(is);
+        return responseHandler.handle(is);
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

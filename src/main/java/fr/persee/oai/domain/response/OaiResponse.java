@@ -9,7 +9,7 @@ import org.w3c.dom.Element;
 
 public record OaiResponse(Instant responseDate, OaiRequest request, Body body) {
 
-  sealed interface Body {
+  public sealed interface Body {
     record Identify(
         String repositoryName,
         URI baseURL,

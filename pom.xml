@@ -22,19 +22,12 @@
     <nullaway.version>0.10.14</nullaway.version>
     <jspecify.version>0.3.0</jspecify.version>
     <flogger.version>0.7.4</flogger.version>
-    <lombok.version>edge-SNAPSHOT</lombok.version>
+    <lombok.version>1.18.30</lombok.version>
 
     <jaxb-maven-plugin.version>2.0.9</jaxb-maven-plugin.version>
     <glassfish-jaxb.version>2.3.8</glassfish-jaxb.version>
     <jakarta-xml-bind.version>2.3.3</jakarta-xml-bind.version>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>projectlombok.org</id>
-      <url>https://projectlombok.org/edge-releases</url>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>

@@ -1,4 +1,4 @@
-package fr.persee.oai.harvest.http;
+package fr.persee.oai.harvest.http.response;
 
 import java.io.InputStream;
 import javax.xml.bind.JAXBException;
@@ -11,11 +11,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class OaiHttpResponseParser {
+public class ResponseParser {
 
   private final ObjectProvider<Unmarshaller> unmarshallerProvider;
 
-  public OAIPMHtype parse(InputStream xml) {
+  public OAIPMHtype parseResponse(InputStream xml) {
     Unmarshaller unmarshaller = unmarshallerProvider.getObject();
 
     try {
