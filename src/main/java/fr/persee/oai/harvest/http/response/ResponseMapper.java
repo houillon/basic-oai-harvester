@@ -103,13 +103,13 @@ public class ResponseMapper {
     }
   }
 
-  private static OaiResponse.Body.Error mapErrorBody(List<OAIPMHerrorType> errorElements) {
+  private static OaiResponse.Body.Errors mapErrorBody(List<OAIPMHerrorType> errorElements) {
     List<OaiError> errors =
         errorElements.stream()
             .map(e -> new OaiError(e.getValue(), mapErrorCode(e.getCode())))
             .toList();
 
-    return new OaiResponse.Body.Error(errors);
+    return new OaiResponse.Body.Errors(errors);
   }
 
   private static OaiErrorCode mapErrorCode(OAIPMHerrorcodeType code) {
@@ -225,7 +225,7 @@ public class ResponseMapper {
         request.getResumptionToken());
   }
 
-  private static OaiTimeBoundary mapTimeBoundary(String string) {
+  public static OaiTimeBoundary mapTimeBoundary(String string) {
     try {
       LocalDate localDate = DateTimeFormatter.ISO_LOCAL_DATE.parse(string, LocalDate::from);
       return new OaiTimeBoundary.Date(localDate);

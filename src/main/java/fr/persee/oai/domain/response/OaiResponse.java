@@ -35,6 +35,6 @@ public record OaiResponse(Instant responseDate, OaiRequest request, Body body) {
     record ListRecords(List<OaiRecord> records, @Nullable OaiResumptionToken resumptionToken)
         implements Body {}
 
-    record Error(List<OaiError> errors) implements Body {}
+    record Errors(List<OaiError> errors) implements Body {}
   }
 }

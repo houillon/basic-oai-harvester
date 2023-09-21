@@ -5,6 +5,7 @@ import dev.failsafe.Failsafe;
 import dev.failsafe.FailsafeException;
 import dev.failsafe.RetryPolicy;
 import fr.persee.oai.domain.request.OaiRequest;
+import fr.persee.oai.domain.response.OaiError;
 import fr.persee.oai.domain.response.OaiGranularity;
 import fr.persee.oai.domain.response.OaiResponse;
 import java.io.IOException;
@@ -16,6 +17,8 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
@@ -80,6 +83,57 @@ public class RequestService {
   }
 
   private final ResponseHandler responseHandler;
+
+  public OaiResponse.Body.Identify identify(OaiRequest.Identify request) throws OaiRequestError {
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.Identify.class);
+  }
+
+  public OaiResponse.Body.ListMetadataFormats listMetadataFormats(
+      OaiRequest.ListMetadataFormats request) throws OaiRequestError {
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListMetadataFormats.class);
+  }
+
+  public OaiResponse.Body.ListSets listSets(OaiRequest.ListSets request) throws OaiRequestError {
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListSets.class);
+  }
+
+  public OaiResponse.Body.ListIdentifiers listIdentifiers(
+      OaiRequest.ListIdentifiers request, OaiGranularity granularity) throws OaiRequestError {
+    return execute(request, granularity, OaiResponse.Body.ListIdentifiers.class);
+  }
+
+  public OaiResponse.Body.ListRecords listRecords(
+      OaiRequest.ListRecords request, OaiGranularity granularity) throws OaiRequestError {
+    return execute(request, granularity, OaiResponse.Body.ListRecords.class);
+  }
+
+  public OaiResponse.Body.GetRecord getRecord(OaiRequest.GetRecord request) throws OaiRequestError {
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.GetRecord.class);
+  }
+
+  private <T extends OaiResponse.Body> T execute(
+      OaiRequest request, OaiGranularity granularity, Class<T> bodyClass) throws OaiRequestError {
+    OaiResponse response = execute(request, granularity);
+
+    OaiResponse.Body body = response.body();
+
+    if (bodyClass.isInstance(body)) {
+      return bodyClass.cast(body);
+    }
+
+    if (body instanceof OaiResponse.Body.Errors errors) {
+      throw new OaiRequestError(errors.errors());
+    }
+
+    throw new IllegalStateException(
+        String.format("unexpected body type: %s for request %s", body, request));
+  }
+
+  @RequiredArgsConstructor
+  @Getter
+  public static class OaiRequestError extends Exception {
+    private final List<OaiError> errors;
+  }
 
   public OaiResponse execute(OaiRequest request, OaiGranularity granularity) {
     log.atDebug().log("executing request: {}", request);
