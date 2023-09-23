@@ -11,15 +11,15 @@ import java.net.URI;
 import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.List;
 import java.util.Queue;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.springframework.stereotype.Component;
 import org.w3c.dom.Element;
 
-@Component
 @RequiredArgsConstructor
 @Slf4j
 public class Harvester {
@@ -31,10 +31,10 @@ public class Harvester {
   public void harvest(
       URI baseUrl,
       Set<String> metadataPrefixes,
-      Set<String> sets,
+      List<String> sets,
       @Nullable OaiTimeBoundary from,
       @Nullable OaiTimeBoundary until,
-      @Nullable Path path) {
+      Path path) {
     OaiRequest.Identify identify = new OaiRequest.Identify(baseUrl);
 
     try {
@@ -43,16 +43,21 @@ public class Harvester {
       from = fixTimeBoundary(from, response.granularity(), "from");
       until = fixTimeBoundary(until, response.granularity(), "until");
 
-      new Instance(baseUrl, metadataPrefixes, sets, from, until, path, response.granularity())
-          .harvest();
+      List<OaiRequest.ListIdentifiers> initialRequests =
+          buildInitialRequests(baseUrl, sets, from, until);
+
+      for (OaiRequest.ListIdentifiers initialRequest : initialRequests) {
+        new Instance(baseUrl, metadataPrefixes, path, response.granularity())
+            .harvest(initialRequest);
+      }
     } catch (RequestService.OaiRequestError e) {
       log.atWarn().log("error executing identify: {} : {}", identify, e.errors());
     }
   }
 
-  private static OaiTimeBoundary fixTimeBoundary(
-      OaiTimeBoundary boundary, OaiGranularity granularity, String name) {
-    if (boundary instanceof OaiTimeBoundary.Date d && granularity == OaiGranularity.SECOND) {
+  private static @Nullable OaiTimeBoundary fixTimeBoundary(
+      @Nullable OaiTimeBoundary boundary, OaiGranularity granularity, String name) {
+    if (granularity == OaiGranularity.SECOND && boundary instanceof OaiTimeBoundary.Date d) {
       log.atWarn()
           .log(
               "%s is a date but repository granularity is second, using UTC start of day"
@@ -63,6 +68,20 @@ public class Harvester {
     return boundary;
   }
 
+  private List<OaiRequest.ListIdentifiers> buildInitialRequests(
+      URI baseUrl,
+      Collection<String> sets,
+      @Nullable OaiTimeBoundary from,
+      @Nullable OaiTimeBoundary until) {
+    if (sets.isEmpty()) {
+      return List.of(OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, null, from, until));
+    }
+
+    return sets.stream()
+        .map(s -> OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, s, from, until))
+        .toList();
+  }
+
   @RequiredArgsConstructor
   private class Instance {
 
@@ -70,27 +89,16 @@ public class Harvester {
 
     private final URI baseUrl;
     private final Set<String> metadataPrefixes;
-    private final Set<String> sets;
-    private final @Nullable OaiTimeBoundary from;
-    private final @Nullable OaiTimeBoundary until;
     private final Path path;
 
     private final OaiGranularity granularity;
 
-    private void harvest() {
-      queueInitialListIdentifiers();
+    private void harvest(OaiRequest.ListIdentifiers initialRequest) {
+      queue(initialRequest);
 
       while (!Thread.interrupted() && !queue.isEmpty()) {
         OaiResponse.Body.ListIdentifiers responseBody = executeListIdentifiers(queue.remove());
         if (responseBody != null) handleListIdentifiers(responseBody);
-      }
-    }
-
-    private void queueInitialListIdentifiers() {
-      if (sets.isEmpty()) {
-        queue(OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, null, from, until));
-      } else {
-        sets.forEach(s -> queue(OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, s, from, until)));
       }
     }
 
@@ -105,7 +113,10 @@ public class Harvester {
         log.atInfo().log("executing list identifiers: {}", request);
         OaiResponse.Body.ListIdentifiers listIdentifiers =
             requestService.listIdentifiers(request, granularity);
-        log.atInfo().log("executed list identifiers: {}", listIdentifiers);
+        log.atInfo().log(
+            "list identifiers response elements: {} ; resumption token: {}",
+            listIdentifiers.headers().size(),
+            listIdentifiers.resumptionToken());
         return listIdentifiers;
       } catch (RequestService.OaiRequestError e) {
         log.atWarn().log("error executing list identifiers: {} : {}", request, e.errors());

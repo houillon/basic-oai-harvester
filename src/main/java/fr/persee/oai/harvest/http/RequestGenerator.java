@@ -1,5 +1,6 @@
 package fr.persee.oai.harvest.http;
 
+
 import fr.persee.oai.domain.request.OaiRequest;
 import fr.persee.oai.domain.request.OaiTimeBoundary;
 import fr.persee.oai.domain.response.OaiGranularity;
@@ -8,12 +9,8 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
-import org.springframework.web.util.DefaultUriBuilderFactory;
-import org.springframework.web.util.UriBuilderFactory;
 
 public class RequestGenerator {
-
-  private static final UriBuilderFactory UBF = new DefaultUriBuilderFactory();
 
   private static class Verb {
     public static final String IDENTIFY = "Identify";
@@ -42,13 +39,13 @@ public class RequestGenerator {
       case OaiRequest.ListRecords r -> buildUri(r, granularity);
       case OaiRequest.ListSets r -> buildUri(r);
       case OaiRequest.Identify r -> buildUri(r);
-      case OaiRequest.ErrorResponseRequest ignored -> throw new IllegalArgumentException(
+      case OaiRequest.ErrorResponseRequest __ -> throw new IllegalArgumentException(
           "cannot build URI for error response request");
     };
   }
 
   private static URI buildUri(OaiRequest.GetRecord request) {
-    return UBF.uriString(request.baseUrl().toString())
+    return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.GET_RECORD)
         .queryParam(Param.IDENTIFIER, request.identifier())
         .queryParam(Param.METADATA_PREFIX, request.metadataPrefix())
@@ -56,7 +53,7 @@ public class RequestGenerator {
   }
 
   private static URI buildUri(OaiRequest.ListIdentifiers request, OaiGranularity granularity) {
-    return UBF.uriString(request.baseUrl().toString())
+    return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.LIST_IDENTIFIERS)
         .queryParamIfPresent(
             Param.FROM,
@@ -71,14 +68,14 @@ public class RequestGenerator {
   }
 
   private static URI buildUri(OaiRequest.ListMetadataFormats request) {
-    return UBF.uriString(request.baseUrl().toString())
+    return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.LIST_METADATA_FORMATS)
-        .queryParamIfPresent(Param.IDENTIFIER, Optional.ofNullable(request.identifier()))
+        //        .queryParamIfPresent(Param.IDENTIFIER, Optional.ofNullable(request.identifier()))
         .build();
   }
 
   private static URI buildUri(OaiRequest.ListRecords request, OaiGranularity granularity) {
-    return UBF.uriString(request.baseUrl().toString())
+    return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.LIST_RECORDS)
         .queryParamIfPresent(
             Param.FROM,
@@ -93,18 +90,18 @@ public class RequestGenerator {
   }
 
   private static URI buildUri(OaiRequest.ListSets request) {
-    return UBF.uriString(request.baseUrl().toString())
+    return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.LIST_SETS)
         .queryParamIfPresent(Param.RESUMPTION_TOKEN, Optional.ofNullable(request.resumptionToken()))
         .build();
   }
 
   private static URI buildUri(OaiRequest.Identify request) {
-    return UBF.uriString(request.baseUrl().toString())
-        .queryParam(Param.VERB, Verb.IDENTIFY)
-        .build();
+    return UriBuilder.fromUri(request.baseUrl()).queryParam(Param.VERB, Verb.IDENTIFY).build();
   }
 
+  // suppressing nullaway until it can handle this switch expression
+  @SuppressWarnings("NullAway")
   private static String mapTimeBoundary(OaiTimeBoundary boundary, OaiGranularity granularity) {
     return switch (granularity) {
       case OaiGranularity.DAY -> mapDayGranularityTimeBoundary(boundary);
@@ -123,7 +120,7 @@ public class RequestGenerator {
   private static String mapSecondGranularityTimeBoundary(OaiTimeBoundary boundary) {
     return switch (boundary) {
       case OaiTimeBoundary.DateTime dt -> DateTimeFormatter.ISO_INSTANT.format(dt.instant());
-      case OaiTimeBoundary.Date ignored -> throw new IllegalArgumentException(
+      case OaiTimeBoundary.Date __ -> throw new IllegalArgumentException(
           "second granularity does not support date boundaries");
     };
   }

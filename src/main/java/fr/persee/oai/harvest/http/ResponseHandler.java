@@ -6,9 +6,7 @@ import fr.persee.oai.harvest.http.response.ResponseParser;
 import java.io.InputStream;
 import lombok.RequiredArgsConstructor;
 import org.openarchives.oai._2.OAIPMHtype;
-import org.springframework.stereotype.Component;
 
-@Component
 @RequiredArgsConstructor
 public class ResponseHandler {
   private final ResponseParser parser;

@@ -22,11 +22,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.Nullable;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
 
-@Service
 @RequiredArgsConstructor
 @Slf4j
 public class RequestService {
@@ -46,15 +42,17 @@ public class RequestService {
           .build();
 
   private static boolean shouldRetry(HttpResponse<InputStream> response) throws IOException {
-    HttpStatus status = HttpStatus.resolve(response.statusCode());
-
-    boolean shouldRetry = status == null || !status.is2xxSuccessful();
+    boolean shouldRetry = !is2xxSuccessful(response.statusCode());
 
     if (shouldRetry) {
       response.body().close();
     }
 
     return shouldRetry;
+  }
+
+  private static boolean is2xxSuccessful(int status) {
+    return status >= 200 && status < 300;
   }
 
   private static Duration computeRetryDelay(ExecutionContext<HttpResponse<InputStream>> context) {
@@ -68,7 +66,7 @@ public class RequestService {
   }
 
   private static @Nullable Duration getRetryAfterDelay(HttpResponse<InputStream> response) {
-    String retryAfter = response.headers().firstValue(HttpHeaders.RETRY_AFTER).orElse(null);
+    String retryAfter = response.headers().firstValue("retry-after").orElse(null);
     if (retryAfter != null) {
       try {
         int seconds = Integer.parseInt(retryAfter);

@@ -1,24 +1,22 @@
 package fr.persee.oai.harvest.http.response;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
 import java.io.InputStream;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.stream.StreamSource;
 import lombok.RequiredArgsConstructor;
 import org.openarchives.oai._2.OAIPMHtype;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Component;
 
-@Component
 @RequiredArgsConstructor
 public class ResponseParser {
 
-  private final ObjectProvider<Unmarshaller> unmarshallerProvider;
+  private final JAXBContext jaxbContext;
 
   public OAIPMHtype parseResponse(InputStream xml) {
-    Unmarshaller unmarshaller = unmarshallerProvider.getObject();
 
     try {
+      Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
       return unmarshaller.unmarshal(new StreamSource(xml), OAIPMHtype.class).getValue();
     } catch (JAXBException e) {
       throw new RuntimeException(e);
