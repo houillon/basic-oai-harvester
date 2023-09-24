@@ -1,0 +1,72 @@
+on:
+  push:
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: "21"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      VERSION: ${{ steps.vars.outputs.VERSION }}
+    steps:
+      - name: build version
+        id: vars
+        shell: bash
+        run: |
+          TIMESTAMP="$(date -u +"%Y%m%d-%H%M%S")"
+          SHORT_SHA="$(echo $GITHUB_SHA | cut -c1-7)"
+          VERSION=${TIMESTAMP}.$SHORT_SHA
+          echo "VERSION=$(echo $VERSION)" >> $GITHUB_OUTPUT
+
+  build:
+    needs: prepare
+    name: 'Build for ${{ matrix.os }}'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+          cache: maven
+
+      - name: set version
+        run: ./mvnw -ntp -B versions:set -DnewVersion="${{ needs.prepare.outputs.VERSION }}"
+
+      - name: Build
+        run: ./mvnw -ntp -B verify -P native
+
+      - name: Compress
+        uses: thedoctor0/zip-release@0.7.1
+        with:
+          filename: basic-oai-harvester-${{ needs.prepare.outputs.VERSION }}-${{ matrix.os }}.zip
+          directory: target/native-image
+          path: basic-oai-harvester
+
+      - uses: actions/upload-artifact@v3
+        with:
+          retention-days: 1
+          path: target/native-image/*.zip
+
+  release:
+    needs: [ prepare, build ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.zip"
+          name: ${{ needs.prepare.outputs.VERSION }}
+          token: ${{ secrets.GITHUB_TOKEN }}
