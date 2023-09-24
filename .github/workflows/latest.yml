@@ -26,8 +26,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, macos-latest, windows-latest ]
-    runs-on: ${{ matrix.os }}
+        os: [ ubuntu, macos, windows ]
+    runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
       - uses: graalvm/setup-graalvm@v1
@@ -64,9 +64,10 @@ jobs:
         with:
           name: artifact
 
-      - name: Release
-        uses: softprops/action-gh-release@v1
+      - uses: "marvinpinto/action-automatic-releases@v1.2.1"
         with:
-          files: "*.zip"
-          name: ${{ needs.prepare.outputs.VERSION }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "${{ needs.prepare.outputs.VERSION }}"
+          prerelease: false
+          files: |
+            *.zip
