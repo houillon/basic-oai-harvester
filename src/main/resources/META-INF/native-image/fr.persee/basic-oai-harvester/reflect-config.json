@@ -49,6 +49,12 @@
   "queryAllDeclaredMethods":true
 },
 {
+  "name":"fr.persee.oai.harvest.command.HarvesterVersionProvider",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"groovy.lang.Closure"
 },
 {
@@ -56,12 +62,8 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
-  "name":"jakarta.xml.bind.annotation.XmlAccessorType",
-  "methods":[{"name":"value","parameterTypes":[] }]
-},
-{
   "name":"jakarta.xml.bind.annotation.XmlAnyElement",
-  "methods":[{"name":"lax","parameterTypes":[] }, {"name":"value","parameterTypes":[] }]
+  "methods":[{"name":"value","parameterTypes":[] }]
 },
 {
   "name":"jakarta.xml.bind.annotation.XmlElement",
@@ -73,10 +75,6 @@
 },
 {
   "name":"jakarta.xml.bind.annotation.XmlEnum",
-  "methods":[{"name":"value","parameterTypes":[] }]
-},
-{
-  "name":"jakarta.xml.bind.annotation.XmlEnumValue",
   "methods":[{"name":"value","parameterTypes":[] }]
 },
 {
@@ -92,10 +90,6 @@
 {
   "name":"java.lang.Thread",
   "fields":[{"name":"threadLocalRandomProbe"}]
-},
-{
-  "name":"java.lang.annotation.Annotation",
-  "methods":[{"name":"annotationType","parameterTypes":[] }]
 },
 {
   "name":"java.nio.file.Path"
@@ -218,10 +212,6 @@
 {
   "name":"org.glassfish.jaxb.core.v2.model.nav.ReflectionNavigator",
   "methods":[{"name":"getInstance","parameterTypes":[] }]
-},
-{
-  "name":"org.glassfish.jaxb.runtime.v2.ContextFactory",
-  "methods":[{"name":"createContext","parameterTypes":["java.lang.Class[]","java.util.Map"] }]
 },
 {
   "name":"org.glassfish.jaxb.runtime.v2.runtime.property.ArrayElementLeafProperty",
