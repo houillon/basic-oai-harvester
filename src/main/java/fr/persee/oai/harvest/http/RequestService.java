@@ -82,41 +82,43 @@ public class RequestService {
 
   private final ResponseHandler responseHandler;
 
-  public OaiResponse.Body.Identify identify(OaiRequest.Identify request) throws OaiRequestError {
+  public Timestamped<OaiResponse.Body.Identify> identify(OaiRequest.Identify request)
+      throws OaiRequestError {
     return execute(request, OaiGranularity.SECOND, OaiResponse.Body.Identify.class);
   }
 
   public OaiResponse.Body.ListMetadataFormats listMetadataFormats(
       OaiRequest.ListMetadataFormats request) throws OaiRequestError {
-    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListMetadataFormats.class);
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListMetadataFormats.class)
+        .value();
   }
 
   public OaiResponse.Body.ListSets listSets(OaiRequest.ListSets request) throws OaiRequestError {
-    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListSets.class);
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.ListSets.class).value();
   }
 
   public OaiResponse.Body.ListIdentifiers listIdentifiers(
       OaiRequest.ListIdentifiers request, OaiGranularity granularity) throws OaiRequestError {
-    return execute(request, granularity, OaiResponse.Body.ListIdentifiers.class);
+    return execute(request, granularity, OaiResponse.Body.ListIdentifiers.class).value();
   }
 
   public OaiResponse.Body.ListRecords listRecords(
       OaiRequest.ListRecords request, OaiGranularity granularity) throws OaiRequestError {
-    return execute(request, granularity, OaiResponse.Body.ListRecords.class);
+    return execute(request, granularity, OaiResponse.Body.ListRecords.class).value();
   }
 
   public OaiResponse.Body.GetRecord getRecord(OaiRequest.GetRecord request) throws OaiRequestError {
-    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.GetRecord.class);
+    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.GetRecord.class).value();
   }
 
-  private <T extends OaiResponse.Body> T execute(
+  private <T extends OaiResponse.Body> Timestamped<T> execute(
       OaiRequest request, OaiGranularity granularity, Class<T> bodyClass) throws OaiRequestError {
     OaiResponse response = execute(request, granularity);
 
     OaiResponse.Body body = response.body();
 
     if (bodyClass.isInstance(body)) {
-      return bodyClass.cast(body);
+      return new Timestamped<>(bodyClass.cast(body), response.responseDate());
     }
 
     if (body instanceof OaiResponse.Body.Errors errors) {
@@ -126,6 +128,8 @@ public class RequestService {
     throw new IllegalStateException(
         String.format("unexpected body type: %s for request %s", body, request));
   }
+
+  public record Timestamped<T>(T value, Instant timestamp) {}
 
   @RequiredArgsConstructor
   @Getter

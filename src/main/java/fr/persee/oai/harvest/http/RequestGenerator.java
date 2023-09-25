@@ -1,6 +1,5 @@
 package fr.persee.oai.harvest.http;
 
-
 import fr.persee.oai.domain.request.OaiRequest;
 import fr.persee.oai.domain.request.OaiTimeBoundary;
 import fr.persee.oai.domain.response.OaiGranularity;
@@ -70,7 +69,7 @@ public class RequestGenerator {
   private static URI buildUri(OaiRequest.ListMetadataFormats request) {
     return UriBuilder.fromUri(request.baseUrl())
         .queryParam(Param.VERB, Verb.LIST_METADATA_FORMATS)
-        //        .queryParamIfPresent(Param.IDENTIFIER, Optional.ofNullable(request.identifier()))
+        .queryParamIfPresent(Param.IDENTIFIER, Optional.ofNullable(request.identifier()))
         .build();
   }
 

@@ -7,6 +7,10 @@ import fr.persee.oai.domain.response.OaiHeader;
 import fr.persee.oai.domain.response.OaiResponse;
 import fr.persee.oai.domain.response.OaiResumptionToken;
 import fr.persee.oai.harvest.http.RequestService;
+import fr.persee.oai.harvest.status.HarvestStatus;
+import fr.persee.oai.harvest.status.HarvestTrack;
+import fr.persee.oai.harvest.status.StatusService;
+import fr.persee.oai.harvest.status.TrackStatus;
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.ZoneOffset;
@@ -27,6 +31,7 @@ public class Harvester {
   private static final String DC_PREFIX = "oai_dc";
 
   private final RequestService requestService;
+  private final StatusService statusService;
 
   public void harvest(
       URI baseUrl,
@@ -38,17 +43,24 @@ public class Harvester {
     OaiRequest.Identify identify = new OaiRequest.Identify(baseUrl);
 
     try {
-      OaiResponse.Body.Identify response = requestService.identify(identify);
+      RequestService.Timestamped<OaiResponse.Body.Identify> response =
+          requestService.identify(identify);
+      OaiGranularity granularity = response.value().granularity();
 
-      from = fixTimeBoundary(from, response.granularity(), "from");
-      until = fixTimeBoundary(until, response.granularity(), "until");
+      from = fixTimeBoundary(from, granularity, "from");
+      until = fixTimeBoundary(until, granularity, "until");
+
+      HarvestStatus status =
+          HarvestStatus.forNewHarvest(
+              response.timestamp(), baseUrl, metadataPrefixes, sets, from, until);
+
+      statusService.write(status, path);
 
       List<OaiRequest.ListIdentifiers> initialRequests =
           buildInitialRequests(baseUrl, sets, from, until);
 
       for (OaiRequest.ListIdentifiers initialRequest : initialRequests) {
-        new Instance(baseUrl, metadataPrefixes, path, response.granularity())
-            .harvest(initialRequest);
+        new Instance(baseUrl, metadataPrefixes, path, granularity).harvest(initialRequest);
       }
     } catch (RequestService.OaiRequestError e) {
       log.atWarn().log("error executing identify: {} : {}", identify, e.errors());
@@ -98,8 +110,30 @@ public class Harvester {
 
       while (!Thread.interrupted() && !queue.isEmpty()) {
         OaiResponse.Body.ListIdentifiers responseBody = executeListIdentifiers(queue.remove());
-        if (responseBody != null) handleListIdentifiers(responseBody);
+        if (responseBody != null) {
+          handleListIdentifiers(responseBody);
+          updateStatus(initialRequest, responseBody);
+        }
       }
+    }
+
+    private void updateStatus(
+        OaiRequest.ListIdentifiers initialRequest, OaiResponse.Body.ListIdentifiers responseBody) {
+      HarvestTrack track = buildTrack(initialRequest.set());
+      TrackStatus status = buildStatus(responseBody.resumptionToken());
+      statusService.update(track, status, path);
+    }
+
+    private TrackStatus buildStatus(@Nullable OaiResumptionToken resumptionToken) {
+      if (resumptionToken == null) return TrackStatus.Done.INSTANCE;
+
+      return new TrackStatus.InProgress(resumptionToken.content());
+    }
+
+    private HarvestTrack buildTrack(@Nullable String set) {
+      if (set == null) return HarvestTrack.Full.INSTANCE;
+
+      return new HarvestTrack.Set(set);
     }
 
     private void queue(OaiRequest.ListIdentifiers request) {

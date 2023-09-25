@@ -4,6 +4,7 @@ import fr.persee.oai.harvest.command.HarvestCommand;
 import fr.persee.oai.harvest.http.RequestService;
 import fr.persee.oai.harvest.http.ResponseHandler;
 import fr.persee.oai.harvest.http.response.ResponseParser;
+import fr.persee.oai.harvest.status.StatusService;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import org.openarchives.oai._2.OAIPMHtype;
@@ -15,7 +16,10 @@ public class HarvesterApp {
     ResponseParser parser = new ResponseParser(jaxbContext);
     ResponseHandler responseHandler = new ResponseHandler(parser);
     RequestService requestService = new RequestService(responseHandler);
-    Harvester harvester = new Harvester(requestService);
+
+    StatusService statusService = new StatusService();
+
+    Harvester harvester = new Harvester(requestService, statusService);
 
     HarvestCommand harvestCommand = new HarvestCommand(harvester);
 
