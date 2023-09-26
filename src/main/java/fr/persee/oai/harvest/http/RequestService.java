@@ -82,9 +82,12 @@ public class RequestService {
 
   private final ResponseHandler responseHandler;
 
-  public Timestamped<OaiResponse.Body.Identify> identify(OaiRequest.Identify request)
-      throws OaiRequestError {
-    return execute(request, OaiGranularity.SECOND, OaiResponse.Body.Identify.class);
+  public Timestamped<OaiResponse.Body.Identify> identify(OaiRequest.Identify request) {
+    try {
+      return execute(request, OaiGranularity.SECOND, OaiResponse.Body.Identify.class);
+    } catch (OaiRequestError e) {
+      throw new IllegalStateException("identify should not return errors", e);
+    }
   }
 
   public OaiResponse.Body.ListMetadataFormats listMetadataFormats(

@@ -18,8 +18,8 @@ import org.jspecify.annotations.Nullable;
 import picocli.CommandLine;
 
 @CommandLine.Command(
-    name = "basic-oai-harvester",
-    description = "Harvest OAI records from a repository, writing them to a directory",
+    name = "harvest",
+    description = "Start a new harvest",
     mixinStandardHelpOptions = true,
     sortOptions = false,
     sortSynopsis = false,
@@ -29,9 +29,9 @@ import picocli.CommandLine;
     footer = {
       "",
       "Examples:",
-      "  basic-oai-harvester http://oai.persee.fr/oai --prefix=oai_dc --prefix=marc --set=persee:serie-geo:issue",
-      "  basic-oai-harvester http://oai.persee.fr/oai --from=2020-01-01",
-      "  basic-oai-harvester http://oai.persee.fr/oai --until=2020-01-01T23:59:59Z --dir=results"
+      "  basic-oai-harvester harvest http://oai.persee.fr/oai --prefix=oai_dc --prefix=marc --set=persee:serie-geo:issue",
+      "  basic-oai-harvester harvest http://oai.persee.fr/oai --from=2020-01-01",
+      "  basic-oai-harvester harvest http://oai.persee.fr/oai --until=2020-01-01T23:59:59Z --dir=results"
     })
 @RequiredArgsConstructor
 @Slf4j

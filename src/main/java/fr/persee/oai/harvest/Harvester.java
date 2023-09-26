@@ -1,7 +1,10 @@
 package fr.persee.oai.harvest;
 
+import static java.util.Comparator.comparing;
+
 import fr.persee.oai.domain.request.OaiRequest;
 import fr.persee.oai.domain.request.OaiTimeBoundary;
+import fr.persee.oai.domain.response.OaiErrorCode;
 import fr.persee.oai.domain.response.OaiGranularity;
 import fr.persee.oai.domain.response.OaiHeader;
 import fr.persee.oai.domain.response.OaiResponse;
@@ -13,10 +16,12 @@ import fr.persee.oai.harvest.status.StatusService;
 import fr.persee.oai.harvest.status.TrackStatus;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
-import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -40,31 +45,28 @@ public class Harvester {
       @Nullable OaiTimeBoundary from,
       @Nullable OaiTimeBoundary until,
       Path path) {
+    RequestService.Timestamped<OaiResponse.Body.Identify> identify =
+        getTimestampedIdentify(baseUrl);
+
+    OaiGranularity granularity = identify.value().granularity();
+
+    from = fixTimeBoundary(from, granularity, "from");
+    until = fixTimeBoundary(until, granularity, "until");
+
+    OaiTimeBoundary started = buildStartBoundary(identify.timestamp(), granularity);
+
+    HarvestStatus status =
+        HarvestStatus.forNewHarvest(started, baseUrl, metadataPrefixes, sets, from, until);
+
+    statusService.write(status, path);
+
+    launchHarvest(path, status, granularity);
+  }
+
+  private RequestService.Timestamped<OaiResponse.Body.Identify> getTimestampedIdentify(
+      URI baseUrl) {
     OaiRequest.Identify identify = new OaiRequest.Identify(baseUrl);
-
-    try {
-      RequestService.Timestamped<OaiResponse.Body.Identify> response =
-          requestService.identify(identify);
-      OaiGranularity granularity = response.value().granularity();
-
-      from = fixTimeBoundary(from, granularity, "from");
-      until = fixTimeBoundary(until, granularity, "until");
-
-      HarvestStatus status =
-          HarvestStatus.forNewHarvest(
-              response.timestamp(), baseUrl, metadataPrefixes, sets, from, until);
-
-      statusService.write(status, path);
-
-      List<OaiRequest.ListIdentifiers> initialRequests =
-          buildInitialRequests(baseUrl, sets, from, until);
-
-      for (OaiRequest.ListIdentifiers initialRequest : initialRequests) {
-        new Instance(baseUrl, metadataPrefixes, path, granularity).harvest(initialRequest);
-      }
-    } catch (RequestService.OaiRequestError e) {
-      log.atWarn().log("error executing identify: {} : {}", identify, e.errors());
-    }
+    return requestService.identify(identify);
   }
 
   private static @Nullable OaiTimeBoundary fixTimeBoundary(
@@ -80,18 +82,116 @@ public class Harvester {
     return boundary;
   }
 
-  private List<OaiRequest.ListIdentifiers> buildInitialRequests(
-      URI baseUrl,
-      Collection<String> sets,
-      @Nullable OaiTimeBoundary from,
-      @Nullable OaiTimeBoundary until) {
-    if (sets.isEmpty()) {
-      return List.of(OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, null, from, until));
+  // suppressing nullaway until it can handle this switch expression
+  @SuppressWarnings("NullAway")
+  private OaiTimeBoundary buildStartBoundary(Instant timestamp, OaiGranularity granularity) {
+    return switch (granularity) {
+      case OaiGranularity.DAY -> new OaiTimeBoundary.Date(
+          timestamp.atZone(ZoneOffset.UTC).toLocalDate());
+      case OaiGranularity.SECOND -> new OaiTimeBoundary.DateTime(timestamp);
+    };
+  }
+
+  public void resume(Path path) {
+    HarvestStatus status = statusService.read(path);
+    if (status == null) {
+      log.atError().log("no status file found: {}", path);
+      return;
     }
 
-    return sets.stream()
-        .map(s -> OaiRequest.ListIdentifiers.of(baseUrl, DC_PREFIX, s, from, until))
+    OaiGranularity granularity = getTimestampedIdentify(status.baseUrl()).value().granularity();
+
+    launchHarvest(path, status, granularity);
+  }
+
+  private void launchHarvest(Path path, HarvestStatus status, OaiGranularity granularity) {
+    status.trackStatuses().entrySet().stream()
+        .sorted(Map.Entry.comparingByValue(comparing(this::trackStatusPosition)))
+        .forEach(e -> launchTrackHarvest(path, e.getKey(), e.getValue(), status, granularity));
+  }
+
+  private int trackStatusPosition(TrackStatus status) {
+    return switch (status) {
+      case TrackStatus.InProgress __ -> 0;
+      case TrackStatus.Pending __ -> 1;
+      case TrackStatus.Done __ -> 2;
+    };
+  }
+
+  private void launchTrackHarvest(
+      Path path,
+      HarvestTrack track,
+      TrackStatus trackStatus,
+      HarvestStatus status,
+      OaiGranularity granularity) {
+    OaiRequest.ListIdentifiers listIdentifiers = buildRequest(track, trackStatus, status);
+
+    if (listIdentifiers == null) return;
+
+    new Instance(status.baseUrl(), status.metadataPrefixes(), path, granularity)
+        .harvest(listIdentifiers, track);
+  }
+
+  private OaiRequest.@Nullable ListIdentifiers buildRequest(
+      HarvestTrack track, TrackStatus trackStatus, HarvestStatus status) {
+    return switch (trackStatus) {
+      case TrackStatus.InProgress progress -> buildResumeRequest(progress, status);
+      case TrackStatus.Pending __ -> buildHarvestRequest(track, status);
+      case TrackStatus.Done __ -> null;
+    };
+  }
+
+  private OaiRequest.ListIdentifiers buildResumeRequest(
+      TrackStatus.InProgress progress, HarvestStatus status) {
+    return OaiRequest.ListIdentifiers.of(status.baseUrl(), progress.resumptionToken());
+  }
+
+  private OaiRequest.ListIdentifiers buildHarvestRequest(HarvestTrack track, HarvestStatus status) {
+    String set =
+        switch (track) {
+          case HarvestTrack.Full __ -> null;
+          case HarvestTrack.Set s -> s.name();
+        };
+
+    return OaiRequest.ListIdentifiers.of(
+        status.baseUrl(), DC_PREFIX, set, status.from(), status.until());
+  }
+
+  public void update(Path path) {
+    HarvestStatus status = statusService.read(path);
+    if (status == null) {
+      log.atError().log("no status file found: {}", path);
+      return;
+    }
+
+    boolean allDone =
+        status.trackStatuses().values().stream().allMatch(TrackStatus.Done.class::isInstance);
+
+    if (!allDone) {
+      log.atWarn().log("previous harvest is not complete, use resume first");
+      return;
+    }
+
+    List<String> sets = getSets(status);
+
+    harvest(
+        status.baseUrl(), status.metadataPrefixes(), sets, status.started(), status.until(), path);
+  }
+
+  private List<String> getSets(HarvestStatus status) {
+    if (status.trackStatuses().containsKey(HarvestTrack.Full.INSTANCE)) return List.of();
+
+    return status.trackStatuses().keySet().stream()
+        .map(this::mapSetTrack)
+        .filter(Objects::nonNull)
         .toList();
+  }
+
+  private @Nullable String mapSetTrack(HarvestTrack track) {
+    return switch (track) {
+      case HarvestTrack.Full __ -> null;
+      case HarvestTrack.Set set -> set.name();
+    };
   }
 
   @RequiredArgsConstructor
@@ -105,21 +205,19 @@ public class Harvester {
 
     private final OaiGranularity granularity;
 
-    private void harvest(OaiRequest.ListIdentifiers initialRequest) {
+    private void harvest(OaiRequest.ListIdentifiers initialRequest, HarvestTrack track) {
       queue(initialRequest);
 
       while (!Thread.interrupted() && !queue.isEmpty()) {
         OaiResponse.Body.ListIdentifiers responseBody = executeListIdentifiers(queue.remove());
         if (responseBody != null) {
           handleListIdentifiers(responseBody);
-          updateStatus(initialRequest, responseBody);
+          updateStatus(track, responseBody);
         }
       }
     }
 
-    private void updateStatus(
-        OaiRequest.ListIdentifiers initialRequest, OaiResponse.Body.ListIdentifiers responseBody) {
-      HarvestTrack track = buildTrack(initialRequest.set());
+    private void updateStatus(HarvestTrack track, OaiResponse.Body.ListIdentifiers responseBody) {
       TrackStatus status = buildStatus(responseBody.resumptionToken());
       statusService.update(track, status, path);
     }
@@ -128,12 +226,6 @@ public class Harvester {
       if (resumptionToken == null) return TrackStatus.Done.INSTANCE;
 
       return new TrackStatus.InProgress(resumptionToken.content());
-    }
-
-    private HarvestTrack buildTrack(@Nullable String set) {
-      if (set == null) return HarvestTrack.Full.INSTANCE;
-
-      return new HarvestTrack.Set(set);
     }
 
     private void queue(OaiRequest.ListIdentifiers request) {
@@ -153,10 +245,23 @@ public class Harvester {
             listIdentifiers.resumptionToken());
         return listIdentifiers;
       } catch (RequestService.OaiRequestError e) {
-        log.atWarn().log("error executing list identifiers: {} : {}", request, e.errors());
-
-        return null;
+        return fakeEmptyResponseOnNoRecordsMatchError(e);
       }
+    }
+
+    private OaiResponse.Body.@Nullable ListIdentifiers fakeEmptyResponseOnNoRecordsMatchError(
+        RequestService.OaiRequestError e) {
+      boolean noRecordMatch =
+          e.errors().stream().allMatch(error -> error.code() == OaiErrorCode.NO_RECORDS_MATCH);
+
+      if (noRecordMatch) {
+        log.atDebug().log("no records match, faking response");
+        return new OaiResponse.Body.ListIdentifiers(List.of(), null);
+      }
+
+      log.atWarn().log("error executing list identifiers: {}", e.errors());
+
+      return null;
     }
 
     private void handleListIdentifiers(OaiResponse.Body.ListIdentifiers body) {

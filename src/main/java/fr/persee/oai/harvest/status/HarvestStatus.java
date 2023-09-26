@@ -2,13 +2,8 @@ package fr.persee.oai.harvest.status;
 
 import static java.util.stream.Collectors.toMap;
 
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import fr.persee.oai.domain.request.OaiTimeBoundary;
-import fr.persee.oai.harvest.status.json.HarvestTrackDeserializer;
-import fr.persee.oai.harvest.status.json.HarvestTrackSerializer;
 import java.net.URI;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,17 +11,15 @@ import java.util.Set;
 import org.jspecify.annotations.Nullable;
 
 public record HarvestStatus(
-    Instant started,
+    OaiTimeBoundary started,
     URI baseUrl,
     Set<String> metadataPrefixes,
-    @JsonSerialize(keyUsing = HarvestTrackSerializer.class)
-        @JsonDeserialize(keyUsing = HarvestTrackDeserializer.class)
-        Map<HarvestTrack, TrackStatus> trackStatuses,
+    Map<HarvestTrack, TrackStatus> trackStatuses,
     @Nullable OaiTimeBoundary from,
     @Nullable OaiTimeBoundary until) {
 
   public static HarvestStatus forNewHarvest(
-      Instant started,
+      OaiTimeBoundary started,
       URI baseUrl,
       Set<String> metadataPrefixes,
       List<String> sets,
