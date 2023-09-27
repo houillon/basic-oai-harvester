@@ -20,18 +20,26 @@ import picocli.CommandLine;
 @CommandLine.Command(
     name = "harvest",
     description = "Start a new harvest",
-    mixinStandardHelpOptions = true,
     sortOptions = false,
     sortSynopsis = false,
     usageHelpWidth = 120,
     usageHelpAutoWidth = true,
-    versionProvider = HarvesterVersionProvider.class,
+    header = {
+      "The `harvest` command starts a new harvest.",
+      "",
+      "The harvested data will be written to the directory specified by the --dir option, or the current directory if omitted.",
+      "Each record will be written in a directory named after the record identifier, and the record will be written to a file named after the metadata prefix.",
+      "Additionally, a harvest-status.json file will be created in the harvest directory, which contains the status of the harvest. If one exists from a previous harvest, it will be overwritten.",
+      "This file is used to resume an interrupted harvest, or to update a completed harvest, with the corresponding command. It can be safely deleted if the harvest is completed and you don't expect you will update the data.",
+      ""
+    },
     footer = {
       "",
       "Examples:",
-      "  basic-oai-harvester harvest http://oai.persee.fr/oai --prefix=oai_dc --prefix=marc --set=persee:serie-geo:issue",
-      "  basic-oai-harvester harvest http://oai.persee.fr/oai --from=2020-01-01",
-      "  basic-oai-harvester harvest http://oai.persee.fr/oai --until=2020-01-01T23:59:59Z --dir=results"
+      "  basic-oai-harvester harvest http://oai.server.com",
+      "  basic-oai-harvester harvest http://oai.server.com --prefix=oai_dc --prefix=marc --set=server.com:collection",
+      "  basic-oai-harvester harvest http://oai.server.com --from=2020-01-01",
+      "  basic-oai-harvester harvest http://oai.server.com --until=2020-01-01T23:59:59Z --dir=results"
     })
 @RequiredArgsConstructor
 @Slf4j
@@ -39,7 +47,7 @@ public class HarvestCommand implements Runnable {
 
   private final Harvester harvester;
 
-  @CommandLine.Parameters(index = "0", description = "The OAI repository base url")
+  @CommandLine.Parameters(index = "0", description = "The OAI-PMH repository base url")
   @SuppressWarnings("NullAway.Init")
   private URI baseUrl;
 

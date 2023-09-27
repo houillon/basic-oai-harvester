@@ -1,6 +1,7 @@
 package fr.persee.oai.harvest;
 
 import static java.util.Comparator.comparing;
+import static java.util.Map.Entry.comparingByValue;
 
 import fr.persee.oai.domain.request.OaiRequest;
 import fr.persee.oai.domain.request.OaiTimeBoundary;
@@ -20,7 +21,6 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
@@ -95,7 +95,7 @@ public class Harvester {
   public void resume(Path path) {
     HarvestStatus status = statusService.read(path);
     if (status == null) {
-      log.atError().log("no status file found: {}", path);
+      log.atError().log("Unable to resume harvest, no status file found in {}", path);
       return;
     }
 
@@ -106,11 +106,13 @@ public class Harvester {
 
   private void launchHarvest(Path path, HarvestStatus status, OaiGranularity granularity) {
     status.trackStatuses().entrySet().stream()
-        .sorted(Map.Entry.comparingByValue(comparing(this::trackStatusPosition)))
+        .sorted(comparingByValue(comparing(this::getTrackStatusPosition)))
         .forEach(e -> launchTrackHarvest(path, e.getKey(), e.getValue(), status, granularity));
+
+    log.atInfo().log("harvest complete");
   }
 
-  private int trackStatusPosition(TrackStatus status) {
+  private int getTrackStatusPosition(TrackStatus status) {
     return switch (status) {
       case TrackStatus.InProgress __ -> 0;
       case TrackStatus.Pending __ -> 1;
@@ -160,7 +162,7 @@ public class Harvester {
   public void update(Path path) {
     HarvestStatus status = statusService.read(path);
     if (status == null) {
-      log.atError().log("no status file found: {}", path);
+      log.atError().log("Unable to update harvest, no status file found in {}", path);
       return;
     }
 
