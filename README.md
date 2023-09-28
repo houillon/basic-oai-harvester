@@ -48,10 +48,10 @@ The three main commands are:
 basic-oai-harvester harvest [OAI-PMH endpoint] [options]
 
 # Resume an interrupted harvest
-basic-oai-harvester resume [harvest directory] [options]
+basic-oai-harvester resume [options]
 
 # Update a completed harvest
-basic-oai-harvester update [harvest directory] [options]
+basic-oai-harvester update [options]
 ```
 
 For example, to start a new complete harvest from the OAI-PMH endpoint `https://oai.example.org/oai` and save the
