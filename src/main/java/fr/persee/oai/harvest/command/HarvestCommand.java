@@ -93,7 +93,9 @@ public class HarvestCommand implements Runnable {
     try {
       Files.createDirectories(path);
     } catch (IOException e) {
-      log.atWarn().setCause(e).log("The path {} is not a directory or could not be created", path);
+      log.atWarn()
+          .setCause(e)
+          .log("The path {} is not a directory or could not be created", path.toAbsolutePath());
       return;
     }
 

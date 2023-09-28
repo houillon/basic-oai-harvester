@@ -1,5 +1,24 @@
 [
 {
+  "name":"[C"
+},
+{
+  "name":"[I"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.deser.Deserializers;"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.deser.KeyDeserializers;"
+},
+{
+  "name":"[Lcom.fasterxml.jackson.databind.ser.Serializers;"
+},
+{
+  "name":"com.fasterxml.jackson.databind.ext.Java7SupportImpl",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
   "name":"com.sun.crypto.provider.AESCipher$General",
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
@@ -44,6 +63,11 @@
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
+  "name":"fr.persee.oai.harvest.HarvesterApp",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"fr.persee.oai.harvest.command.HarvestCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
@@ -53,6 +77,23 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"fr.persee.oai.harvest.command.ResumeCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"fr.persee.oai.harvest.command.UpdateCommand",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"fr.persee.oai.harvest.status.HarvestStatus",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":["fr.persee.oai.domain.request.OaiTimeBoundary","java.net.URI","java.util.Set","java.util.Map","fr.persee.oai.domain.request.OaiTimeBoundary","fr.persee.oai.domain.request.OaiTimeBoundary"] }, {"name":"baseUrl","parameterTypes":[] }, {"name":"from","parameterTypes":[] }, {"name":"metadataPrefixes","parameterTypes":[] }, {"name":"started","parameterTypes":[] }, {"name":"trackStatuses","parameterTypes":[] }, {"name":"until","parameterTypes":[] }]
 },
 {
   "name":"groovy.lang.Closure"
@@ -82,14 +123,41 @@
   "methods":[{"name":"factoryClass","parameterTypes":[] }]
 },
 {
+  "name":"java.io.Serializable",
+  "queryAllDeclaredMethods":true
+},
+{
+  "name":"java.lang.Class",
+  "methods":[{"name":"getRecordComponents","parameterTypes":[] }]
+},
+{
+  "name":"java.lang.Comparable",
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.lang.Object",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "methods":[{"name":"getAny","parameterTypes":[] }, {"name":"getBaseURL","parameterTypes":[] }, {"name":"getCode","parameterTypes":[] }, {"name":"getCompleteListSize","parameterTypes":[] }, {"name":"getCursor","parameterTypes":[] }, {"name":"getDatestamp","parameterTypes":[] }, {"name":"getDeletedRecord","parameterTypes":[] }, {"name":"getEarliestDatestamp","parameterTypes":[] }, {"name":"getExpirationDate","parameterTypes":[] }, {"name":"getFrom","parameterTypes":[] }, {"name":"getGetRecord","parameterTypes":[] }, {"name":"getGranularity","parameterTypes":[] }, {"name":"getHeader","parameterTypes":[] }, {"name":"getIdentifier","parameterTypes":[] }, {"name":"getIdentify","parameterTypes":[] }, {"name":"getListIdentifiers","parameterTypes":[] }, {"name":"getListMetadataFormats","parameterTypes":[] }, {"name":"getListRecords","parameterTypes":[] }, {"name":"getListSets","parameterTypes":[] }, {"name":"getMetadata","parameterTypes":[] }, {"name":"getMetadataNamespace","parameterTypes":[] }, {"name":"getMetadataPrefix","parameterTypes":[] }, {"name":"getProtocolVersion","parameterTypes":[] }, {"name":"getRecord","parameterTypes":[] }, {"name":"getRepositoryName","parameterTypes":[] }, {"name":"getRequest","parameterTypes":[] }, {"name":"getResponseDate","parameterTypes":[] }, {"name":"getResumptionToken","parameterTypes":[] }, {"name":"getSchema","parameterTypes":[] }, {"name":"getSet","parameterTypes":[] }, {"name":"getSetName","parameterTypes":[] }, {"name":"getSetSpec","parameterTypes":[] }, {"name":"getStatus","parameterTypes":[] }, {"name":"getUntil","parameterTypes":[] }, {"name":"getValue","parameterTypes":[] }, {"name":"getVerb","parameterTypes":[] }]
 },
 {
+  "name":"java.lang.Record",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true
+},
+{
   "name":"java.lang.Thread",
   "fields":[{"name":"threadLocalRandomProbe"}]
+},
+{
+  "name":"java.lang.reflect.RecordComponent",
+  "methods":[{"name":"getName","parameterTypes":[] }, {"name":"getType","parameterTypes":[] }]
+},
+{
+  "name":"java.net.URI",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
 },
 {
   "name":"java.nio.file.Path"
@@ -183,6 +251,12 @@
 },
 {
   "name":"java.util.ArrayList",
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"java.util.HashSet",
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -379,7 +453,7 @@
   "fields":[{"name":"GET_RECORD"}, {"name":"IDENTIFY"}, {"name":"LIST_IDENTIFIERS"}, {"name":"LIST_METADATA_FORMATS"}, {"name":"LIST_RECORDS"}, {"name":"LIST_SETS"}]
 },
 {
-  "name":"picocli.CommandLine$AutoHelpMixin",
+  "name":"picocli.CommandLine$HelpCommand",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true
 },
