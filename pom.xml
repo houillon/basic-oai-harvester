@@ -17,7 +17,7 @@
     <lombok.version>1.18.30</lombok.version>
     <picocli.version>4.7.5</picocli.version>
     <slf4j.version>2.0.9</slf4j.version>
-    <jackson.version>2.15.2</jackson.version>
+    <jackson.version>2.15.3</jackson.version>
 
     <error-prone.version>2.22.0</error-prone.version>
     <nullaway.version>0.10.14</nullaway.version>
