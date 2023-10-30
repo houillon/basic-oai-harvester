@@ -45,7 +45,7 @@ jobs:
         run: ./mvnw -ntp -B verify -P native
 
       - name: Compress
-        uses: thedoctor0/zip-release@0.7.1
+        uses: thedoctor0/zip-release@0.7.5
         with:
           filename: basic-oai-harvester-${{ needs.prepare.outputs.VERSION }}-${{ matrix.os }}.zip
           directory: target/native-image
