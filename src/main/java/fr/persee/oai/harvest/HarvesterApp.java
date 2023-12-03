@@ -1,9 +1,9 @@
 package fr.persee.oai.harvest;
 
 import fr.persee.oai.harvest.command.HarvestCommand;
-import fr.persee.oai.harvest.command.HarvesterVersionProvider;
 import fr.persee.oai.harvest.command.ResumeCommand;
 import fr.persee.oai.harvest.command.UpdateCommand;
+import fr.persee.oai.harvest.command.VersionCommand;
 import fr.persee.oai.harvest.http.RequestService;
 import fr.persee.oai.harvest.http.ResponseHandler;
 import fr.persee.oai.harvest.http.response.ResponseParser;
@@ -19,7 +19,6 @@ import picocli.CommandLine;
     synopsisSubcommandLabel = "<COMMAND>",
     usageHelpWidth = 120,
     usageHelpAutoWidth = true,
-    versionProvider = HarvesterVersionProvider.class,
     header = {
       "This is a program to harvest data from an OAI-PMH server and save the results to the filesystem.",
       "",
@@ -33,9 +32,6 @@ import picocli.CommandLine;
       ""
     })
 public class HarvesterApp implements Runnable {
-  @SuppressWarnings("NullAway.Init")
-  @CommandLine.Spec
-  CommandLine.Model.CommandSpec spec;
 
   public static void main(String[] args) throws JAXBException {
     JAXBContext jaxbContext = JAXBContext.newInstance(OAIPMHtype.class);
@@ -57,14 +53,13 @@ public class HarvesterApp implements Runnable {
         .addSubcommand(resumeCommand)
         .addSubcommand(updateCommand)
         .addSubcommand(new CommandLine.HelpCommand())
+        .addSubcommand(new VersionCommand())
         .execute(args);
   }
 
-  @CommandLine.Option(
-      names = {"-V", "--version"},
-      versionHelp = true,
-      description = "Print version information and exit.")
-  private boolean versionRequested;
+  @SuppressWarnings("NullAway.Init")
+  @CommandLine.Spec
+  CommandLine.Model.CommandSpec spec;
 
   @Override
   public void run() {
