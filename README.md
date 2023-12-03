@@ -1,5 +1,7 @@
 # basic-oai-harvester
 
+[version française](README_fr.md)
+
 This is a simple command-line tool for harvesting metadata using the OAI-PMH protocol. It provides three main functions:
 
 1. **Start a New Harvest:** Initiate a new metadata harvest from an OAI-PMH data source.
@@ -17,7 +19,7 @@ This is a simple command-line tool for harvesting metadata using the OAI-PMH pro
 
 ## Installation
 
-To get tarted:
+To get started:
 
 1. Download the zip file corresponding to your operating system from the GitHub repository release page (`ubuntu` should
    work on most Linux distributions).
