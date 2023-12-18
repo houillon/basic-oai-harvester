@@ -50,7 +50,7 @@ jobs:
           directory: target/native-image
           path: basic-oai-harvester
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           retention-days: 1
           path: target/native-image/*.zip
