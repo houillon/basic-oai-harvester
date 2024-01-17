@@ -16,7 +16,7 @@
     <failsafe.version>3.3.2</failsafe.version>
     <lombok.version>1.18.30</lombok.version>
     <picocli.version>4.7.5</picocli.version>
-    <slf4j.version>2.0.9</slf4j.version>
+    <slf4j.version>2.0.11</slf4j.version>
     <jackson.version>2.16.1</jackson.version>
 
     <error-prone.version>2.23.0</error-prone.version>
