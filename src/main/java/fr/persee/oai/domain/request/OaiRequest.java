@@ -40,7 +40,20 @@ public sealed interface OaiRequest {
       @Nullable OaiTimeBoundary from,
       @Nullable OaiTimeBoundary until,
       @Nullable String resumptionToken)
-      implements OaiRequest {}
+      implements OaiRequest {
+    public static ListRecords of(
+        URI baseUrl,
+        String metadataPrefix,
+        @Nullable String set,
+        @Nullable OaiTimeBoundary from,
+        @Nullable OaiTimeBoundary until) {
+      return new ListRecords(baseUrl, metadataPrefix, set, from, until, null);
+    }
+
+    public static ListRecords of(URI baseUrl, String resumptionToken) {
+      return new ListRecords(baseUrl, null, null, null, null, resumptionToken);
+    }
+  }
 
   record ListSets(URI baseUrl, @Nullable String resumptionToken) implements OaiRequest {}
 
