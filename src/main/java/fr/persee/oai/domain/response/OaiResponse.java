@@ -24,17 +24,21 @@ public record OaiResponse(Instant responseDate, OaiRequest request, Body body) {
 
     record ListMetadataFormats(List<OaiMetadataFormat> metadataFormats) implements Body {}
 
-    record ListSets(List<OaiSet> sets, @Nullable OaiResumptionToken resumptionToken)
-        implements Body {}
-
     record GetRecord(OaiRecord content) implements Body {}
 
+    record ListSets(List<OaiSet> sets, @Nullable OaiResumptionToken resumptionToken)
+        implements Paginated {}
+
     record ListIdentifiers(List<OaiHeader> headers, @Nullable OaiResumptionToken resumptionToken)
-        implements Body {}
+        implements Paginated {}
 
     record ListRecords(List<OaiRecord> records, @Nullable OaiResumptionToken resumptionToken)
-        implements Body {}
+        implements Paginated {}
 
     record Errors(List<OaiError> errors) implements Body {}
+
+    sealed interface Paginated extends Body {
+      @Nullable OaiResumptionToken resumptionToken();
+    }
   }
 }

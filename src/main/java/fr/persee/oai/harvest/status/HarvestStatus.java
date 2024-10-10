@@ -2,7 +2,7 @@ package fr.persee.oai.harvest.status;
 
 import static java.util.stream.Collectors.toMap;
 
-import fr.persee.oai.domain.request.OaiTimeBoundary;
+import fr.persee.oai.domain.OaiTimeBoundary;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.List;

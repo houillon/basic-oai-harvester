@@ -1,5 +1,6 @@
 package fr.persee.oai.domain.request;
 
+import fr.persee.oai.domain.OaiTimeBoundary;
 import java.net.URI;
 import org.jspecify.annotations.Nullable;
 
@@ -7,57 +8,65 @@ public sealed interface OaiRequest {
 
   URI baseUrl();
 
-  record GetRecord(URI baseUrl, String identifier, String metadataPrefix) implements OaiRequest {}
+  sealed interface Paginated extends OaiRequest {}
 
-  record ListIdentifiers(
-      URI baseUrl,
-      @Nullable String metadataPrefix,
-      @Nullable String set,
-      @Nullable OaiTimeBoundary from,
-      @Nullable OaiTimeBoundary until,
-      @Nullable String resumptionToken)
-      implements OaiRequest {
-    public static ListIdentifiers of(
-        URI baseUrl,
-        String metadataPrefix,
-        @Nullable String set,
-        @Nullable OaiTimeBoundary from,
-        @Nullable OaiTimeBoundary until) {
-      return new ListIdentifiers(baseUrl, metadataPrefix, set, from, until, null);
-    }
+  sealed interface Filtered extends Paginated {}
 
-    public static ListIdentifiers of(URI baseUrl, String resumptionToken) {
-      return new ListIdentifiers(baseUrl, null, null, null, null, resumptionToken);
-    }
+  sealed interface Pagination extends OaiRequest {
+    String resumptionToken();
   }
 
-  record ListMetadataFormats(URI baseUrl, @Nullable String identifier) implements OaiRequest {}
+  sealed interface PaginationData extends OaiRequest {}
 
-  record ListRecords(
-      URI baseUrl,
-      @Nullable String metadataPrefix,
-      @Nullable String set,
-      @Nullable OaiTimeBoundary from,
-      @Nullable OaiTimeBoundary until,
-      @Nullable String resumptionToken)
-      implements OaiRequest {
-    public static ListRecords of(
-        URI baseUrl,
-        String metadataPrefix,
-        @Nullable String set,
-        @Nullable OaiTimeBoundary from,
-        @Nullable OaiTimeBoundary until) {
-      return new ListRecords(baseUrl, metadataPrefix, set, from, until, null);
-    }
+  sealed interface Filter extends PaginationData {
+    String metadataPrefix();
 
-    public static ListRecords of(URI baseUrl, String resumptionToken) {
-      return new ListRecords(baseUrl, null, null, null, null, resumptionToken);
-    }
+    @Nullable String set();
+
+    @Nullable OaiTimeBoundary from();
+
+    @Nullable OaiTimeBoundary until();
   }
 
-  record ListSets(URI baseUrl, @Nullable String resumptionToken) implements OaiRequest {}
+  record GetRecord(URI baseUrl, URI identifier, String metadataPrefix) implements OaiRequest {}
+
+  sealed interface ListMetadataFormats extends OaiRequest {
+    record All(URI baseUrl) implements ListMetadataFormats {}
+
+    record Item(URI baseUrl, URI identifier) implements ListMetadataFormats {}
+  }
+
+  sealed interface ListSets extends Paginated {
+    record Initial(URI baseUrl) implements ListSets, PaginationData {}
+
+    record Resume(URI baseUrl, String resumptionToken) implements ListSets, Pagination {}
+  }
 
   record Identify(URI baseUrl) implements OaiRequest {}
 
-  record ErrorResponseRequest(URI baseUrl) implements OaiRequest {}
+  record Error(URI baseUrl) implements OaiRequest {}
+
+  sealed interface ListIdentifiers extends Filtered {
+    record Initial(
+        URI baseUrl,
+        String metadataPrefix,
+        @Nullable String set,
+        @Nullable OaiTimeBoundary from,
+        @Nullable OaiTimeBoundary until)
+        implements ListIdentifiers, Filter {}
+
+    record Resume(URI baseUrl, String resumptionToken) implements ListIdentifiers, Pagination {}
+  }
+
+  sealed interface ListRecords extends Filtered {
+    record Initial(
+        URI baseUrl,
+        String metadataPrefix,
+        @Nullable String set,
+        @Nullable OaiTimeBoundary from,
+        @Nullable OaiTimeBoundary until)
+        implements ListRecords, Filter {}
+
+    record Resume(URI baseUrl, String resumptionToken) implements ListRecords, Pagination {}
+  }
 }

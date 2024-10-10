@@ -1,4 +1,4 @@
-package fr.persee.oai.domain.request;
+package fr.persee.oai.domain;
 
 import java.time.Instant;
 import java.time.LocalDate;

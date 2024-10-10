@@ -6,11 +6,9 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
-import fr.persee.oai.domain.request.OaiTimeBoundary;
-import fr.persee.oai.harvest.http.response.ResponseMapper;
+import fr.persee.oai.domain.OaiTimeBoundary;
+import fr.persee.oai.harvest.http.response.TimeBoundaryMapping;
 import java.io.IOException;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 
 public class TimeBoundaryJson {
   public static class Serializer extends StdSerializer<OaiTimeBoundary> {
@@ -21,15 +19,7 @@ public class TimeBoundaryJson {
     @Override
     public void serialize(OaiTimeBoundary value, JsonGenerator gen, SerializerProvider provider)
         throws IOException {
-      gen.writeString(serialize(value));
-    }
-
-    private String serialize(OaiTimeBoundary value) {
-      return switch (value) {
-        case OaiTimeBoundary.DateTime dt -> DateTimeFormatter.ISO_INSTANT.format(
-            dt.instant().truncatedTo(ChronoUnit.SECONDS));
-        case OaiTimeBoundary.Date d -> DateTimeFormatter.ISO_LOCAL_DATE.format(d.date());
-      };
+      gen.writeString(TimeBoundaryMapping.serialize(value));
     }
   }
 
@@ -43,7 +33,7 @@ public class TimeBoundaryJson {
         throws IOException {
       String s = p.getCodec().readValue(p, String.class);
 
-      return ResponseMapper.mapTimeBoundary(s);
+      return TimeBoundaryMapping.parse(s);
     }
   }
 }

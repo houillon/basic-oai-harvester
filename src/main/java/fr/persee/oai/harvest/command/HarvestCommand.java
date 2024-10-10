@@ -1,8 +1,8 @@
 package fr.persee.oai.harvest.command;
 
-import fr.persee.oai.domain.request.OaiTimeBoundary;
+import fr.persee.oai.domain.OaiTimeBoundary;
 import fr.persee.oai.harvest.Harvester;
-import fr.persee.oai.harvest.http.response.ResponseMapper;
+import fr.persee.oai.harvest.http.response.TimeBoundaryMapping;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -87,9 +87,9 @@ public class HarvestCommand implements Runnable {
   @Override
   public void run() {
     OaiTimeBoundary fromBoundary =
-        Optional.ofNullable(from).map(ResponseMapper::mapTimeBoundary).orElse(null);
+        Optional.ofNullable(from).map(TimeBoundaryMapping::parse).orElse(null);
     OaiTimeBoundary untilBoundary =
-        Optional.ofNullable(until).map(ResponseMapper::mapTimeBoundary).orElse(null);
+        Optional.ofNullable(until).map(TimeBoundaryMapping::parse).orElse(null);
 
     try {
       Files.createDirectories(path);

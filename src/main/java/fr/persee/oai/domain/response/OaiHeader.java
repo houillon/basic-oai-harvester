@@ -2,6 +2,7 @@ package fr.persee.oai.domain.response;
 
 import static java.util.stream.Collectors.toMap;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -12,10 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 
 public record OaiHeader(
-    String identifier,
-    Instant datestamp,
-    List<String> setSpecs,
-    OaiHeader.@Nullable Status status) {
+    URI identifier, Instant datestamp, List<String> setSpecs, @Nullable Status status) {
 
   @RequiredArgsConstructor
   @Getter

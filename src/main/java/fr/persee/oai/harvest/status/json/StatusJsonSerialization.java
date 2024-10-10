@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import fr.persee.oai.domain.request.OaiTimeBoundary;
+import fr.persee.oai.domain.OaiTimeBoundary;
 import fr.persee.oai.harvest.status.HarvestTrack;
 import fr.persee.oai.harvest.status.TrackStatus;
 import lombok.Getter;

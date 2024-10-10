@@ -1,7 +1,7 @@
 package fr.persee.oai.harvest.http.response;
 
+import fr.persee.oai.domain.OaiTimeBoundary;
 import fr.persee.oai.domain.request.OaiRequest;
-import fr.persee.oai.domain.request.OaiTimeBoundary;
 import fr.persee.oai.domain.response.OaiDeletedRecord;
 import fr.persee.oai.domain.response.OaiError;
 import fr.persee.oai.domain.response.OaiErrorCode;
@@ -16,12 +16,8 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
-import javax.xml.datatype.XMLGregorianCalendar;
 import org.jspecify.annotations.Nullable;
 import org.openarchives.oai._2.AboutType;
 import org.openarchives.oai._2.DeletedRecordType;
@@ -43,95 +39,114 @@ import org.openarchives.oai._2.RequestType;
 import org.openarchives.oai._2.ResumptionTokenType;
 import org.openarchives.oai._2.SetType;
 import org.openarchives.oai._2.StatusType;
+import org.openarchives.oai._2.VerbType;
 import org.w3c.dom.Element;
 
 public class ResponseMapper {
 
   public static OaiResponse mapResponse(OAIPMHtype response) {
-    Instant responseDate = mapDate(response.getResponseDate());
+    Instant responseDate = XmlCalendarMapping.toInstant(response.getResponseDate());
+    OaiRequest request = mapRequest(response.getRequest());
+    OaiResponse.Body body = mapBody(response, request);
 
-    List<OAIPMHerrorType> error = response.getError();
-    if (!error.isEmpty()) {
-      return mapErrorResponse(error, responseDate, response.getRequest());
-    }
-    GetRecordType getRecord = response.getGetRecord();
-    if (getRecord != null) {
-      return mapGetRecordResponse(getRecord, responseDate, response.getRequest());
-    }
-    IdentifyType identify = response.getIdentify();
-    if (identify != null) {
-      return mapIdentifyResponse(identify, responseDate, response.getRequest());
-    }
-    ListIdentifiersType listIdentifiers = response.getListIdentifiers();
-    if (listIdentifiers != null) {
-      return mapListIdentifiersResponse(listIdentifiers, responseDate, response.getRequest());
-    }
-    ListMetadataFormatsType listMetadataFormats = response.getListMetadataFormats();
-    if (listMetadataFormats != null) {
-      return mapListMetadataFormatsResponse(
-          listMetadataFormats, responseDate, response.getRequest());
-    }
-    ListRecordsType listRecords = response.getListRecords();
-    if (listRecords != null) {
-      return mapListRecordsResponse(listRecords, responseDate, response.getRequest());
-    }
-    ListSetsType listSets = response.getListSets();
-    if (listSets != null) {
-      return mapListSetsResponse(listSets, responseDate, response.getRequest());
-    }
-
-    throw new IllegalArgumentException("Unknown response type");
+    return new OaiResponse(responseDate, request, body);
   }
 
-  private static Instant mapDate(XMLGregorianCalendar date) {
-    return date.toGregorianCalendar().toInstant();
+  private static OaiRequest mapRequest(RequestType request) {
+    VerbType verb = request.getVerb();
+
+    return switch (verb) {
+      case GET_RECORD -> mapGetRecordRequest(request);
+      case IDENTIFY -> mapIdentifyRequest(request);
+      case LIST_IDENTIFIERS -> mapListIdentifiersRequest(request);
+      case LIST_METADATA_FORMATS -> mapListMetadataFormatsRequest(request);
+      case LIST_RECORDS -> mapListRecordsRequest(request);
+      case LIST_SETS -> mapListSetsRequest(request);
+      case null -> mapErrorRequest(request);
+    };
   }
 
-  private static OaiResponse mapErrorResponse(
-      List<OAIPMHerrorType> errorElements, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        new OaiRequest.ErrorResponseRequest(mapUri(request.getValue())),
-        mapErrorBody(errorElements));
+  private static OaiRequest.GetRecord mapGetRecordRequest(RequestType request) {
+    return new OaiRequest.GetRecord(
+        mapUri(request.getValue()), mapUri(request.getIdentifier()), request.getMetadataPrefix());
   }
 
-  private static URI mapUri(String uri) {
-    try {
-      return new URI(uri);
-    } catch (URISyntaxException e) {
-      throw new RuntimeException(e);
-    }
+  private static OaiRequest.Identify mapIdentifyRequest(RequestType request) {
+    return new OaiRequest.Identify(mapUri(request.getValue()));
   }
 
-  private static OaiResponse.Body.Errors mapErrorBody(List<OAIPMHerrorType> errorElements) {
-    List<OaiError> errors =
-        errorElements.stream()
-            .map(e -> new OaiError(e.getValue(), mapErrorCode(e.getCode())))
-            .toList();
+  private static OaiRequest mapListIdentifiersRequest(RequestType request) {
+    URI baseUrl = mapUri(request.getValue());
+    String resumptionToken = request.getResumptionToken();
 
-    return new OaiResponse.Body.Errors(errors);
-  }
-
-  private static OaiErrorCode mapErrorCode(OAIPMHerrorcodeType code) {
-    OaiErrorCode errorCode = OaiErrorCode.getFromValue(code.value());
-
-    if (errorCode == null) {
-      throw new IllegalArgumentException("Unknown error code");
+    if (resumptionToken != null) {
+      return new OaiRequest.ListIdentifiers.Resume(baseUrl, resumptionToken);
     }
 
-    return errorCode;
+    return new OaiRequest.ListIdentifiers.Initial(
+        baseUrl,
+        request.getMetadataPrefix(),
+        request.getSet(),
+        mapNullable(request.getFrom(), TimeBoundaryMapping::parse),
+        mapNullable(request.getUntil(), TimeBoundaryMapping::parse));
   }
 
-  private static OaiResponse mapGetRecordResponse(
-      GetRecordType getRecordElement, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        new OaiRequest.GetRecord(
-            mapUri(request.getValue()), request.getIdentifier(), request.getMetadataPrefix()),
-        mapGetResponseBody(getRecordElement));
+  private static OaiRequest.ListMetadataFormats mapListMetadataFormatsRequest(RequestType request) {
+    URI baseUrl = mapUri(request.getValue());
+    String identifier = request.getIdentifier();
+
+    if (identifier != null) {
+      return new OaiRequest.ListMetadataFormats.Item(baseUrl, mapUri(identifier));
+    }
+
+    return new OaiRequest.ListMetadataFormats.All(baseUrl);
   }
 
-  private static OaiResponse.Body.GetRecord mapGetResponseBody(GetRecordType getRecordElement) {
+  private static OaiRequest mapListRecordsRequest(RequestType request) {
+    URI baseUrl = mapUri(request.getValue());
+    String resumptionToken = request.getResumptionToken();
+
+    if (resumptionToken != null) {
+      return new OaiRequest.ListRecords.Resume(baseUrl, resumptionToken);
+    }
+
+    return new OaiRequest.ListRecords.Initial(
+        baseUrl,
+        request.getMetadataPrefix(),
+        request.getSet(),
+        mapNullable(request.getFrom(), TimeBoundaryMapping::parse),
+        mapNullable(request.getUntil(), TimeBoundaryMapping::parse));
+  }
+
+  private static OaiRequest.ListSets mapListSetsRequest(RequestType request) {
+    URI baseUrl = mapUri(request.getValue());
+    String resumptionToken = request.getResumptionToken();
+
+    if (resumptionToken != null) {
+      return new OaiRequest.ListSets.Resume(baseUrl, resumptionToken);
+    }
+
+    return new OaiRequest.ListSets.Initial(baseUrl);
+  }
+
+  private static OaiRequest.Error mapErrorRequest(RequestType request) {
+    return new OaiRequest.Error(mapUri(request.getValue()));
+  }
+
+  private static OaiResponse.Body mapBody(OAIPMHtype response, OaiRequest request) {
+    return switch (request) {
+      case OaiRequest.GetRecord __ -> mapGetRecordBody(response.getGetRecord());
+      case OaiRequest.Identify __ -> mapIdentifyBody(response.getIdentify());
+      case OaiRequest.ListIdentifiers __ -> mapListIdentifiersBody(response.getListIdentifiers());
+      case OaiRequest.ListMetadataFormats __ ->
+          mapListMetadataFormatsBody(response.getListMetadataFormats());
+      case OaiRequest.ListRecords __ -> mapListRecordsBody(response.getListRecords());
+      case OaiRequest.ListSets __ -> mapListSetsBody(response.getListSets());
+      case OaiRequest.Error __ -> mapErrorBody(response.getError());
+    };
+  }
+
+  private static OaiResponse.Body.GetRecord mapGetRecordBody(GetRecordType getRecordElement) {
     return new OaiResponse.Body.GetRecord(mapRecord(getRecordElement.getRecord()));
   }
 
@@ -151,10 +166,15 @@ public class ResponseMapper {
 
   private static OaiHeader mapHeader(HeaderType header) {
     return new OaiHeader(
-        header.getIdentifier(),
-        DateTimeFormatter.ISO_INSTANT.parse(header.getDatestamp(), Instant::from),
+        mapUri(header.getIdentifier()),
+        parseFromBoundary(header.getDatestamp()),
         header.getSetSpec(),
         mapNullable(header.getStatus(), ResponseMapper::mapStatus));
+  }
+
+  private static Instant parseFromBoundary(String header) {
+    OaiTimeBoundary datestampBoundary = TimeBoundaryMapping.parse(header);
+    return TimeBoundaryMapping.mapFromToInstant(datestampBoundary);
   }
 
   private static OaiHeader.Status mapStatus(StatusType statusElement) {
@@ -167,21 +187,13 @@ public class ResponseMapper {
     return status;
   }
 
-  private static OaiResponse mapIdentifyResponse(
-      IdentifyType identifyElement, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        new OaiRequest.Identify(mapUri(request.getValue())),
-        mapIdentifyBody(identifyElement));
-  }
-
   private static OaiResponse.Body.Identify mapIdentifyBody(IdentifyType identifyElement) {
     return new OaiResponse.Body.Identify(
         identifyElement.getRepositoryName(),
         mapUri(identifyElement.getBaseURL()),
         identifyElement.getProtocolVersion(),
         identifyElement.getAdminEmail(),
-        DateTimeFormatter.ISO_INSTANT.parse(identifyElement.getEarliestDatestamp(), Instant::from),
+        parseFromBoundary(identifyElement.getEarliestDatestamp()),
         mapDeletedRecord(identifyElement.getDeletedRecord()),
         mapGranularity(identifyElement.getGranularity()),
         identifyElement.getCompression(),
@@ -207,34 +219,6 @@ public class ResponseMapper {
     return granularity;
   }
 
-  private static OaiResponse mapListIdentifiersResponse(
-      ListIdentifiersType listIdentifiersElement, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        mapListIdentifiersRequest(request),
-        mapListIdentifiersBody(listIdentifiersElement));
-  }
-
-  private static OaiRequest mapListIdentifiersRequest(RequestType request) {
-    return new OaiRequest.ListIdentifiers(
-        mapUri(request.getValue()),
-        request.getMetadataPrefix(),
-        request.getSet(),
-        mapNullable(request.getFrom(), ResponseMapper::mapTimeBoundary),
-        mapNullable(request.getUntil(), ResponseMapper::mapTimeBoundary),
-        request.getResumptionToken());
-  }
-
-  public static OaiTimeBoundary mapTimeBoundary(String string) {
-    try {
-      LocalDate localDate = DateTimeFormatter.ISO_LOCAL_DATE.parse(string, LocalDate::from);
-      return new OaiTimeBoundary.Date(localDate);
-    } catch (DateTimeParseException e) {
-      Instant instant = DateTimeFormatter.ISO_INSTANT.parse(string, Instant::from);
-      return new OaiTimeBoundary.DateTime(instant);
-    }
-  }
-
   private static <@Nullable T, R> @Nullable R mapNullable(@Nullable T t, Function<T, R> mapper) {
     return t == null ? null : mapper.apply(t);
   }
@@ -250,19 +234,9 @@ public class ResponseMapper {
   private static OaiResumptionToken mapResumptionToken(ResumptionTokenType resumptionTokenElement) {
     return new OaiResumptionToken(
         resumptionTokenElement.getValue(),
-        mapNullable(resumptionTokenElement.getExpirationDate(), ResponseMapper::mapDate),
+        mapNullable(resumptionTokenElement.getExpirationDate(), XmlCalendarMapping::toInstant),
         mapNullable(resumptionTokenElement.getCompleteListSize(), BigInteger::longValue),
         mapNullable(resumptionTokenElement.getCursor(), BigInteger::longValue));
-  }
-
-  private static OaiResponse mapListMetadataFormatsResponse(
-      ListMetadataFormatsType listMetadataFormatsElement,
-      Instant responseDate,
-      RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        new OaiRequest.ListMetadataFormats(mapUri(request.getValue()), request.getIdentifier()),
-        mapListMetadataFormatsBody(listMetadataFormatsElement));
   }
 
   private static OaiResponse.Body.ListMetadataFormats mapListMetadataFormatsBody(
@@ -280,35 +254,11 @@ public class ResponseMapper {
         mapUri(metadataFormat.getMetadataNamespace()));
   }
 
-  private static OaiResponse mapListRecordsResponse(
-      ListRecordsType listRecordsElement, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate, mapListRecordsRequest(request), mapListRecordsBody(listRecordsElement));
-  }
-
-  private static OaiRequest mapListRecordsRequest(RequestType request) {
-    return new OaiRequest.ListRecords(
-        mapUri(request.getValue()),
-        request.getMetadataPrefix(),
-        request.getSet(),
-        mapNullable(request.getFrom(), ResponseMapper::mapTimeBoundary),
-        mapNullable(request.getUntil(), ResponseMapper::mapTimeBoundary),
-        request.getResumptionToken());
-  }
-
   private static OaiResponse.Body.ListRecords mapListRecordsBody(
       ListRecordsType listRecordsElement) {
     return new OaiResponse.Body.ListRecords(
         listRecordsElement.getRecord().stream().map(ResponseMapper::mapRecord).toList(),
         mapNullable(listRecordsElement.getResumptionToken(), ResponseMapper::mapResumptionToken));
-  }
-
-  private static OaiResponse mapListSetsResponse(
-      ListSetsType listSetsElement, Instant responseDate, RequestType request) {
-    return new OaiResponse(
-        responseDate,
-        new OaiRequest.ListSets(mapUri(request.getValue()), request.getResumptionToken()),
-        mapListSetsBody(listSetsElement));
   }
 
   private static OaiResponse.Body.ListSets mapListSetsBody(ListSetsType listSetsElement) {
@@ -325,5 +275,33 @@ public class ResponseMapper {
             .map(DescriptionType::getAny)
             .map(ResponseMapper::mapElement)
             .toList());
+  }
+
+  private static OaiResponse.Body.Errors mapErrorBody(List<OAIPMHerrorType> errorElements) {
+    List<OaiError> errors =
+        errorElements.stream()
+            .map(e -> new OaiError(e.getValue(), mapErrorCode(e.getCode())))
+            .toList();
+
+    return new OaiResponse.Body.Errors(errors);
+  }
+
+  private static OaiErrorCode mapErrorCode(OAIPMHerrorcodeType code) {
+    OaiErrorCode errorCode = OaiErrorCode.getFromValue(code.value());
+
+    if (errorCode == null) {
+      throw new IllegalArgumentException("Unknown error code");
+    }
+
+    return errorCode;
+  }
+
+  private static URI mapUri(String uri) {
+    try {
+      return new URI(uri);
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(
+          String.format("can't map string '%s' to uri : %s", uri, e.getMessage()), e);
+    }
   }
 }

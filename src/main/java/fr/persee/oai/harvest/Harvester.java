@@ -3,8 +3,8 @@ package fr.persee.oai.harvest;
 import static java.util.Comparator.comparing;
 import static java.util.Map.Entry.comparingByValue;
 
+import fr.persee.oai.domain.OaiTimeBoundary;
 import fr.persee.oai.domain.request.OaiRequest;
-import fr.persee.oai.domain.request.OaiTimeBoundary;
 import fr.persee.oai.domain.response.OaiErrorCode;
 import fr.persee.oai.domain.response.OaiGranularity;
 import fr.persee.oai.domain.response.OaiHeader;
@@ -86,8 +86,8 @@ public class Harvester {
   @SuppressWarnings("NullAway")
   private OaiTimeBoundary buildStartBoundary(Instant timestamp, OaiGranularity granularity) {
     return switch (granularity) {
-      case OaiGranularity.DAY -> new OaiTimeBoundary.Date(
-          timestamp.atZone(ZoneOffset.UTC).toLocalDate());
+      case OaiGranularity.DAY ->
+          new OaiTimeBoundary.Date(timestamp.atZone(ZoneOffset.UTC).toLocalDate());
       case OaiGranularity.SECOND -> new OaiTimeBoundary.DateTime(timestamp);
     };
   }
@@ -147,7 +147,7 @@ public class Harvester {
 
   private OaiRequest.ListIdentifiers buildResumeRequest(
       TrackStatus.InProgress progress, HarvestStatus status) {
-    return OaiRequest.ListIdentifiers.of(status.baseUrl(), progress.resumptionToken());
+    return new OaiRequest.ListIdentifiers.Resume(status.baseUrl(), progress.resumptionToken());
   }
 
   private OaiRequest.ListIdentifiers buildHarvestRequest(HarvestTrack track, HarvestStatus status) {
@@ -157,7 +157,7 @@ public class Harvester {
           case HarvestTrack.Set s -> s.name();
         };
 
-    return OaiRequest.ListIdentifiers.of(
+    return new OaiRequest.ListIdentifiers.Initial(
         status.baseUrl(), DC_PREFIX, set, status.from(), status.until());
   }
 
@@ -283,7 +283,7 @@ public class Harvester {
       log.atDebug().log("handling resumption token: {}", resumptionToken.content());
 
       OaiRequest.ListIdentifiers listIdentifiers =
-          OaiRequest.ListIdentifiers.of(baseUrl, resumptionToken.content());
+          new OaiRequest.ListIdentifiers.Resume(baseUrl, resumptionToken.content());
 
       queue(listIdentifiers);
     }
@@ -326,7 +326,7 @@ public class Harvester {
         return;
       }
 
-      FileWriter.write(path, metadata, body.content().header().identifier(), prefix);
+      FileWriter.write(path, metadata, body.content().header().identifier().toString(), prefix);
     }
   }
 }
