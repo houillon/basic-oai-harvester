@@ -43,17 +43,26 @@ jobs:
       - name: build
         run: ./mvnw -ntp -B verify -P native
 
+      - name: Compress
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          filename: basic-oai-harvester-${{ needs.prepare.outputs.VERSION }}-${{ matrix.os }}.zip
+          directory: target/native-image
+          path: basic-oai-harvester
+
       - uses: actions/upload-artifact@v4
         with:
-          name: basic-oai-harvester-${{ needs.prepare.outputs.VERSION }}-${{ matrix.os }}
-          path: target/native-image/basic-oai-harvester
-          if-no-files-found: error
+          name: ${{ matrix.os }}
+          path: target/native-image/*.zip
+          retention-days: 1
 
   release:
     needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
 
       - name: Display structure of downloaded files
         run: ls -R
