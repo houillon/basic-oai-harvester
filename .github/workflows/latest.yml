@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu, macos, windows ]
+        os: [ubuntu, macos, windows]
     runs-on: ${{ matrix.os }}-latest
     steps:
       - uses: actions/checkout@v4
@@ -52,16 +52,17 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          retention-days: 1
+          name: ${{ matrix.os }}
           path: target/native-image/*.zip
+          retention-days: 1
 
   release:
-    needs: [ prepare, build ]
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          merge-multiple: true
 
       - uses: marvinpinto/action-automatic-releases@v1.2.1
         with:
