@@ -54,8 +54,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4
-        with:
-          name: artifact
 
       - uses: marvinpinto/action-automatic-releases@v1.2.1
         with:
@@ -63,4 +61,4 @@ jobs:
           automatic_release_tag: ${{ needs.prepare.outputs.VERSION }}
           prerelease: false
           files: |
-            *
+            *.zip
