@@ -26,7 +26,7 @@
     <jvnet-jaxb-plugen.version>2.0.9</jvnet-jaxb-plugen.version>
     <patrodyne-jvnet-jaxb-plugin.version>2.2.1</patrodyne-jvnet-jaxb-plugin.version>
 
-    <native-maven-plugin.version>0.10.3</native-maven-plugin.version>
+    <native-maven-plugin.version>0.10.4</native-maven-plugin.version>
   </properties>
 
   <dependencies>
