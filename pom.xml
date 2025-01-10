@@ -23,9 +23,7 @@
     <nullaway.version>0.12.3</nullaway.version>
     <jspecify.version>1.0.0</jspecify.version>
 
-    <jvnet-jaxb-plugen.version>2.0.9</jvnet-jaxb-plugen.version>
-    <patrodyne-jvnet-jaxb-plugin.version>2.2.1</patrodyne-jvnet-jaxb-plugin.version>
-
+    <jvnet-jaxb-plugin.version>4.0.8</jvnet-jaxb-plugin.version>
     <native-maven-plugin.version>0.10.4</native-maven-plugin.version>
   </properties>
 
@@ -84,12 +82,9 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.patrodyne.jvnet</groupId>
-        <artifactId>hisrc-higherjaxb40-maven-plugin</artifactId>
-        <version>${patrodyne-jvnet-jaxb-plugin.version}</version>
-        <!--        <groupId>org.jvnet.jaxb</groupId>-->
-        <!--        <artifactId>jaxb-maven-plugin</artifactId>-->
-        <!--        <version>${jvnet-jaxb.version}</version>-->
+        <groupId>org.jvnet.jaxb</groupId>
+        <artifactId>jaxb-maven-plugin</artifactId>
+        <version>${jvnet-jaxb-plugin.version}</version>
         <executions>
           <execution>
             <goals>
