@@ -24,7 +24,7 @@
     <jspecify.version>1.0.0</jspecify.version>
 
     <jvnet-jaxb-plugin.version>4.0.8</jvnet-jaxb-plugin.version>
-    <native-maven-plugin.version>0.10.4</native-maven-plugin.version>
+    <native-maven-plugin.version>0.10.6</native-maven-plugin.version>
   </properties>
 
   <dependencies>
