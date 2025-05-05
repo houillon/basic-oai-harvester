@@ -20,7 +20,7 @@
     <jackson.version>2.18.2</jackson.version>
 
     <error-prone.version>2.36.0</error-prone.version>
-    <nullaway.version>0.12.3</nullaway.version>
+    <nullaway.version>0.12.7</nullaway.version>
     <jspecify.version>1.0.0</jspecify.version>
 
     <jvnet-jaxb-plugin.version>4.0.8</jvnet-jaxb-plugin.version>
